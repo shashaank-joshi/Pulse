@@ -1,4 +1,18 @@
-export default function Home() {
+async function getFavorites() {
+  const res = await fetch("http://127.0.0.1:8000/favorites", {
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch favorites");
+  }
+
+  return res.json();
+}
+
+export default async function Home() {
+  const data = await getFavorites();
+
   return (
     <main className="min-h-screen bg-white text-black px-8 py-12">
       <div className="max-w-5xl mx-auto">
@@ -11,14 +25,19 @@ export default function Home() {
           </p>
         </header>
 
-        <section className="grid gap-6 md:grid-cols-2">
-          <div className="border rounded-2xl p-6 shadow-sm">
-            <h2 className="text-2xl font-semibold mb-3">Favorites</h2>
-            <p className="text-gray-600">
-              Track favorite teams, players, artists, songs, and genres in one place.
-            </p>
+        <section className="mb-10">
+          <h2 className="text-2xl font-semibold mb-4">Favorites</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            {data.favorites.map((item: { id: number; category: string; name: string }) => (
+              <div key={item.id} className="border rounded-2xl p-4 shadow-sm">
+                <p className="text-sm text-gray-500 uppercase">{item.category}</p>
+                <p className="text-lg font-medium">{item.name}</p>
+              </div>
+            ))}
           </div>
+        </section>
 
+        <section className="grid gap-6 md:grid-cols-3">
           <div className="border rounded-2xl p-6 shadow-sm">
             <h2 className="text-2xl font-semibold mb-3">Recent Updates</h2>
             <p className="text-gray-600">

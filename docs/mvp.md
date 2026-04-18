@@ -1,23 +1,22 @@
 # Must Have
-- Save favorites
-- Save notes/trivia
-- Ingest football match/team data
-- Dashboard with recent updates
-- Search across data
-- AI summary generation
+- Interest selection (teams, artists, topics)
+- Personalized homepage
+- Recent results and upcoming matches for followed teams
+- Discussion/news summary module
+- Discovery cards
 - Basic deployment
 
 # Good to Have
-- Scheduled daily/weekly summary
-- Tagging
-- Semantic search / RAG over notes
-- Music discovery trends
-- Recommendation explanation
+- Guess the Footballer game
+- Interesting Now cards
+- Daily personalized briefing
+- Retrieval-based context layer
+- Better recommendation ranking
 
 # Cut for Now
-- Multi-user auth
-- Social/community features
-- Advanced agents
-- Complex recommendation models
-- Real-time notifications
-- Multiple sports support in V1
+- Complex multi-user auth
+- Social posting/commenting
+- Multi-agent workflows
+- Full music account sync
+- Multiple sports deeply supported in V1
+- Real-time chat/community features
