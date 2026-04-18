@@ -1,48 +1,48 @@
-# Initial Schema Draft
+# Pulse Schema V2
 
-## favorites
-- id
-- category (team, player, artist, song, genre)
-- name
-- external_id
-- source
-- created_at
-
-## sports_updates
+## tracked_teams
 - id
 - team_name
+- external_api_id
+- league_name
+- country
+- created_at
+
+## matches
+- id
+- external_match_id
+- home_team
+- away_team
 - competition
-- match_date
-- opponent
-- result
+- match_datetime
 - status
-- summary
-- raw_payload_url
-- created_at
-
-## music_items
-- id
-- item_type (artist, song, album, genre)
-- name
-- artist_name
-- notes
-- source
-- created_at
-
-## notes
-- id
-- title
-- content
-- category (sports, music, trivia, general)
-- tags
-- linked_entity
+- home_score
+- away_score
+- winner
 - created_at
 - updated_at
 
+## tracked_artists
+- id
+- artist_name
+- external_api_id
+- genre
+- created_at
+
+## content_cards
+- id
+- card_type
+- title
+- description
+- source
+- related_entity
+- created_at
+
 ## summaries
 - id
-- title
+- entity_type
+- entity_name
 - summary_type
-- input_context
-- output_text
+- summary_text
+- source_context
 - created_at
