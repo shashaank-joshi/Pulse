@@ -1,62 +1,81 @@
-async function getFavorites() {
-  const res = await fetch("http://127.0.0.1:8000/favorites", {
+import TeamSearch from "../components/team-search";
+
+async function getLiveMatches() {
+  const res = await fetch("http://127.0.0.1:8000/pulse/live", {
     cache: "no-store",
   });
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch favorites");
-  }
+  if (!res.ok) throw new Error("Failed to fetch live matches");
+  return res.json();
+}
 
+async function getTodayFixtures() {
+  const today = new Date().toISOString().split("T")[0];
+
+  const res = await fetch(
+    `http://127.0.0.1:8000/pulse/fixtures/date?date=${today}`,
+    { cache: "no-store" }
+  );
+
+  if (!res.ok) throw new Error("Failed to fetch today's fixtures");
   return res.json();
 }
 
 export default async function Home() {
-  const data = await getFavorites();
+  const [liveData, fixturesData] = await Promise.all([
+    getLiveMatches(),
+    getTodayFixtures(),
+  ]);
 
   return (
     <main className="min-h-screen bg-white text-black px-8 py-12">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <header className="mb-10">
           <h1 className="text-5xl font-bold mb-4">Pulse</h1>
-          <p className="text-lg text-gray-700 max-w-2xl">
-            A personal sports and music intelligence platform to track favorites,
-            save notes and trivia, and generate useful summaries from structured
-            data.
+          <p className="text-lg text-gray-700 max-w-3xl">
+            A personalized sports and culture intelligence platform that helps
+            users track teams, artists, and topics they care about, then
+            delivers live context, recent developments, and discovery in one place.
           </p>
         </header>
 
-        <section className="mb-10">
-          <h2 className="text-2xl font-semibold mb-4">Favorites</h2>
+        <section className="mb-12">
+          <h2 className="text-2xl font-semibold mb-4">Live Now</h2>
           <div className="grid gap-4 md:grid-cols-2">
-            {data.favorites.map((item: { id: number; category: string; name: string }) => (
-              <div key={item.id} className="border rounded-2xl p-4 shadow-sm">
-                <p className="text-sm text-gray-500 uppercase">{item.category}</p>
-                <p className="text-lg font-medium">{item.name}</p>
+            {liveData.matches.slice(0, 4).map((match: any) => (
+              <div key={match.fixture_id} className="border rounded-2xl p-4 shadow-sm">
+                <p className="text-sm text-gray-500">{match.league}</p>
+                <p className="font-medium">
+                  {match.home_team} vs {match.away_team}
+                </p>
+                <p className="text-lg">
+                  {match.home_score} - {match.away_score}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {match.status} {match.elapsed ? `• ${match.elapsed}'` : ""}
+                </p>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="grid gap-6 md:grid-cols-3">
-          <div className="border rounded-2xl p-6 shadow-sm">
-            <h2 className="text-2xl font-semibold mb-3">Recent Updates</h2>
-            <p className="text-gray-600">
-              View the latest football updates and saved music discoveries.
-            </p>
-          </div>
+        <TeamSearch />
 
-          <div className="border rounded-2xl p-6 shadow-sm">
-            <h2 className="text-2xl font-semibold mb-3">Notes & Trivia</h2>
-            <p className="text-gray-600">
-              Save random TILs, observations, and personal notes across sports and music.
-            </p>
-          </div>
-
-          <div className="border rounded-2xl p-6 shadow-sm">
-            <h2 className="text-2xl font-semibold mb-3">AI Summary</h2>
-            <p className="text-gray-600">
-              Generate simple summaries from your saved notes and tracked updates.
-            </p>
+        <section>
+          <h2 className="text-2xl font-semibold mb-4">Today&apos;s Matches</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            {fixturesData.matches.slice(0, 6).map((match: any) => (
+              <div key={match.fixture_id} className="border rounded-2xl p-4 shadow-sm">
+                <p className="text-sm text-gray-500">{match.league}</p>
+                <p className="font-medium">
+                  {match.home_team} vs {match.away_team}
+                </p>
+                <p className="text-lg">
+                  {match.home_score ?? "-"} - {match.away_score ?? "-"}
+                </p>
+                <p className="text-sm text-gray-600">{match.status}</p>
+              </div>
+            ))}
           </div>
         </section>
       </div>
