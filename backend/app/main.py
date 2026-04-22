@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from app.services.api_football import (
     search_teams,
     get_standings,
@@ -22,6 +23,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+tracked_teams = []
+
+
+class TrackedTeam(BaseModel):
+    team_id: int
+    team_name: str
+    team_logo: str
+    country: str
+
 
 @app.get("/")
 def root():
@@ -47,6 +58,22 @@ def pulse_teams_search(name: str = Query(..., min_length=2)):
         })
 
     return {"teams": teams}
+
+
+@app.get("/pulse/tracked-teams")
+def get_tracked_teams():
+    return {"teams": tracked_teams}
+
+
+@app.post("/pulse/tracked-teams")
+def add_tracked_team(team: TrackedTeam):
+    for existing_team in tracked_teams:
+        if existing_team["team_id"] == team.team_id:
+            return {"message": "Team already tracked", "teams": tracked_teams}
+
+    tracked_teams.append(team.dict())
+    return {"message": "Team tracked successfully", "teams": tracked_teams}
+
 
 @app.get("/pulse/live")
 def pulse_live():

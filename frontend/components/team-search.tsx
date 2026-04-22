@@ -14,12 +14,14 @@ export default function TeamSearch() {
   const [results, setResults] = useState<TeamResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   async function handleSearch() {
     if (!query.trim()) return;
 
     setLoading(true);
     setError("");
+    setMessage("");
 
     try {
       const res = await fetch(
@@ -40,6 +42,32 @@ export default function TeamSearch() {
       setResults([]);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleTrackTeam(team: TeamResult) {
+    setError("");
+    setMessage("");
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/pulse/tracked-teams", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(team),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Failed to track team: ${text}`);
+      }
+
+      const data = await res.json();
+      setMessage(data.message || "Team tracked successfully.");
+    } catch (err) {
+      console.error(err);
+      setError("Could not track team.");
     }
   }
 
@@ -64,21 +92,31 @@ export default function TeamSearch() {
       </div>
 
       {loading && <p className="text-gray-600">Searching...</p>}
-      {error && <p className="text-red-600">{error}</p>}
+      {error && <p className="text-red-600 mb-2">{error}</p>}
+      {message && <p className="text-green-600 mb-2">{message}</p>}
 
       <div className="grid gap-4 md:grid-cols-2">
         {results.map((team) => (
           <div key={team.team_id} className="border rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <img
-                src={team.team_logo}
-                alt={team.team_name}
-                className="w-10 h-10 object-contain"
-              />
-              <div>
-                <p className="font-medium">{team.team_name}</p>
-                <p className="text-sm text-gray-600">{team.country}</p>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <img
+                  src={team.team_logo}
+                  alt={team.team_name}
+                  className="w-10 h-10 object-contain"
+                />
+                <div>
+                  <p className="font-medium">{team.team_name}</p>
+                  <p className="text-sm text-gray-600">{team.country}</p>
+                </div>
               </div>
+
+              <button
+                onClick={() => handleTrackTeam(team)}
+                className="border rounded-xl px-3 py-2 text-sm font-medium"
+              >
+                Track
+              </button>
             </div>
           </div>
         ))}

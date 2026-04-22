@@ -1,3 +1,4 @@
+import TrackedTeams from "../components/tracked-teams";
 import TeamSearch from "../components/team-search";
 
 async function getLiveMatches() {
@@ -58,6 +59,8 @@ export default async function Home() {
             ))}
           </div>
         </section>
+
+        <TrackedTeams />
 
         <TeamSearch />
 
