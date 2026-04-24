@@ -1,6 +1,7 @@
 import os
 import requests
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -72,12 +73,17 @@ def get_fixtures_by_date(date: str):
     response.raise_for_status()
     return response.json()
 
+def get_date_strings(days_ahead: int = 4):
+    today = datetime.today().date()
+    return [(today + timedelta(days=i)).isoformat() for i in range(days_ahead)]
+    
 def format_live_fixtures(data: dict):
     fixtures = []
 
     for item in data.get("response", []):
         fixtures.append({
             "fixture_id": item["fixture"]["id"],
+            "date": item["fixture"]["date"],
             "league": item["league"]["name"],
             "home_team": item["teams"]["home"]["name"],
             "away_team": item["teams"]["away"]["name"],

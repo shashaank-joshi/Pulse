@@ -1,4 +1,5 @@
 import TrackedTeams from "../components/tracked-teams";
+import UpcomingTrackedMatches from "../components/upcoming-tracked-matches";
 import TeamSearch from "../components/team-search";
 
 async function getLiveMatches() {
@@ -61,6 +62,8 @@ export default async function Home() {
         </section>
 
         <TrackedTeams />
+
+        <UpcomingTrackedMatches />
 
         <TeamSearch />
 

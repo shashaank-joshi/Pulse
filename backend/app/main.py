@@ -9,6 +9,7 @@ from app.services.api_football import (
     format_live_fixtures,
     format_standings,
     format_fixtures_by_date,
+    get_date_strings,
 )
 
 app = FastAPI(title="Pulse API")
@@ -91,3 +92,29 @@ def pulse_standings(league: int, season: int):
 def pulse_fixtures_by_date(date: str):
     raw_data = get_fixtures_by_date(date=date)
     return {"matches": format_fixtures_by_date(raw_data)}
+
+@app.get("/pulse/tracked-teams/upcoming")
+def get_upcoming_tracked_team_matches():
+    if not tracked_teams:
+        return {"matches": []}
+
+    tracked_team_ids = {team["team_id"] for team in tracked_teams}
+    upcoming_matches = []
+    seen_fixture_ids = set()
+
+    for date in get_date_strings(4):
+        raw_data = get_fixtures_by_date(date)
+        formatted_matches = format_fixtures_by_date(raw_data)
+
+        for raw_item, formatted_item in zip(raw_data.get("response", []), formatted_matches):
+            home_team_id = raw_item["teams"]["home"]["id"]
+            away_team_id = raw_item["teams"]["away"]["id"]
+
+            if home_team_id in tracked_team_ids or away_team_id in tracked_team_ids:
+                fixture_id = formatted_item["fixture_id"]
+
+                if fixture_id not in seen_fixture_ids:
+                    seen_fixture_ids.add(fixture_id)
+                    upcoming_matches.append(formatted_item)
+
+    return {"matches": upcoming_matches}
