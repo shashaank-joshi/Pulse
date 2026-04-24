@@ -43,16 +43,6 @@ def get_team_fixtures(team_id: int, season: int, last: int = None, next_count: i
     response.raise_for_status()
     return response.json()
 
-def get_standings(league: int, season: int):
-    response = requests.get(
-        f"{BASE_URL}/standings",
-        headers=HEADERS,
-        params={"league": league, "season": season},
-        timeout=15,
-    )
-    response.raise_for_status()
-    return response.json()
-
 def get_live_fixtures():
     response = requests.get(
         f"{BASE_URL}/fixtures",
@@ -74,8 +64,12 @@ def get_fixtures_by_date(date: str):
     return response.json()
 
 def get_date_strings(days_ahead: int = 4):
-    today = datetime.today().date()
+    today = datetime.now().date()
     return [(today + timedelta(days=i)).isoformat() for i in range(days_ahead)]
+
+def get_past_date_strings(days_back: int = 4):
+    today = datetime.now().date()
+    return [(today - timedelta(days=i)).isoformat() for i in range(days_back)]
     
 def format_live_fixtures(data: dict):
     fixtures = []
@@ -96,33 +90,6 @@ def format_live_fixtures(data: dict):
         })
 
     return fixtures
-
-
-def format_standings(data: dict):
-    standings_table = []
-
-    response = data.get("response", [])
-    if not response:
-        return standings_table
-
-    table = response[0]["league"]["standings"][0]
-
-    for row in table:
-        standings_table.append({
-            "rank": row["rank"],
-            "team_name": row["team"]["name"],
-            "team_logo": row["team"]["logo"],
-            "points": row["points"],
-            "played": row["all"]["played"],
-            "won": row["all"]["win"],
-            "draw": row["all"]["draw"],
-            "lost": row["all"]["lose"],
-            "goal_difference": row["goalsDiff"],
-            "form": row["form"],
-        })
-
-    return standings_table
-
 
 def format_fixtures_by_date(data: dict):
     fixtures = []

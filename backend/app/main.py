@@ -3,13 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from app.services.api_football import (
     search_teams,
-    get_standings,
     get_live_fixtures,
     get_fixtures_by_date,
     format_live_fixtures,
-    format_standings,
     format_fixtures_by_date,
     get_date_strings,
+    get_past_date_strings
 )
 
 app = FastAPI(title="Pulse API")
@@ -81,13 +80,6 @@ def pulse_live():
     raw_data = get_live_fixtures()
     return {"matches": format_live_fixtures(raw_data)}
 
-
-@app.get("/pulse/standings")
-def pulse_standings(league: int, season: int):
-    raw_data = get_standings(league=league, season=season)
-    return {"table": format_standings(raw_data)}
-
-
 @app.get("/pulse/fixtures/date")
 def pulse_fixtures_by_date(date: str):
     raw_data = get_fixtures_by_date(date=date)
@@ -118,3 +110,31 @@ def get_upcoming_tracked_team_matches():
                     upcoming_matches.append(formatted_item)
 
     return {"matches": upcoming_matches}
+
+@app.get("/pulse/tracked-teams/recent")
+def get_recent_tracked_team_matches():
+    if not tracked_teams:
+        return {"matches": []}
+
+    tracked_team_ids = {team["team_id"] for team in tracked_teams}
+    recent_matches = []
+    seen_fixture_ids = set()
+
+    for date in get_past_date_strings(4):
+        raw_data = get_fixtures_by_date(date)
+        formatted_matches = format_fixtures_by_date(raw_data)
+
+        for raw_item, formatted_item in zip(raw_data.get("response", []), formatted_matches):
+            home_team_id = raw_item["teams"]["home"]["id"]
+            away_team_id = raw_item["teams"]["away"]["id"]
+            status = raw_item["fixture"]["status"]["short"]
+
+            if home_team_id in tracked_team_ids or away_team_id in tracked_team_ids:
+                if status in ["FT", "AET", "PEN"]:
+                    fixture_id = formatted_item["fixture_id"]
+
+                    if fixture_id not in seen_fixture_ids:
+                        seen_fixture_ids.add(fixture_id)
+                        recent_matches.append(formatted_item)
+
+    return {"matches": recent_matches}

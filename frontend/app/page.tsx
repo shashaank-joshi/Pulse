@@ -1,6 +1,7 @@
 import TrackedTeams from "../components/tracked-teams";
 import UpcomingTrackedMatches from "../components/upcoming-tracked-matches";
 import TeamSearch from "../components/team-search";
+import RecentTrackedMatches from "../components/recent-tracked-matches";
 
 async function getLiveMatches() {
   const res = await fetch("http://127.0.0.1:8000/pulse/live", {
@@ -64,6 +65,8 @@ export default async function Home() {
         <TrackedTeams />
 
         <UpcomingTrackedMatches />
+
+        <RecentTrackedMatches />
 
         <TeamSearch />
 
