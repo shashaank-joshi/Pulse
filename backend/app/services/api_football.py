@@ -63,11 +63,11 @@ def get_fixtures_by_date(date: str):
     response.raise_for_status()
     return response.json()
 
-def get_date_strings(days_ahead: int = 4):
+def get_date_strings(days_ahead: int = 7):
     today = datetime.now().date()
     return [(today + timedelta(days=i)).isoformat() for i in range(days_ahead)]
 
-def get_past_date_strings(days_back: int = 4):
+def get_past_date_strings(days_back: int = 7):
     today = datetime.now().date()
     return [(today - timedelta(days=i)).isoformat() for i in range(days_back)]
     

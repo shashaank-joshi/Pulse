@@ -1,6 +1,10 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from app.db.database import SessionLocal, engine, Base
+from app.models.tracked_team import TrackedTeam as TrackedTeamModel
 from app.services.api_football import (
     search_teams,
     get_live_fixtures,
@@ -8,8 +12,10 @@ from app.services.api_football import (
     format_live_fixtures,
     format_fixtures_by_date,
     get_date_strings,
-    get_past_date_strings
+    get_past_date_strings,
 )
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Pulse API")
 
@@ -24,14 +30,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-tracked_teams = []
-
 
 class TrackedTeam(BaseModel):
     team_id: int
     team_name: str
     team_logo: str
     country: str
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 @app.get("/")
@@ -61,18 +73,43 @@ def pulse_teams_search(name: str = Query(..., min_length=2)):
 
 
 @app.get("/pulse/tracked-teams")
-def get_tracked_teams():
-    return {"teams": tracked_teams}
+def get_tracked_teams(db: Session = Depends(get_db)):
+    teams = db.query(TrackedTeamModel).all()
+
+    return {
+        "teams": [
+            {
+                "team_id": team.team_id,
+                "team_name": team.team_name,
+                "team_logo": team.team_logo,
+                "country": team.country,
+            }
+            for team in teams
+        ]
+    }
 
 
 @app.post("/pulse/tracked-teams")
-def add_tracked_team(team: TrackedTeam):
-    for existing_team in tracked_teams:
-        if existing_team["team_id"] == team.team_id:
-            return {"message": "Team already tracked", "teams": tracked_teams}
+def add_tracked_team(team: TrackedTeam, db: Session = Depends(get_db)):
+    existing_team = db.query(TrackedTeamModel).filter(
+        TrackedTeamModel.team_id == team.team_id
+    ).first()
 
-    tracked_teams.append(team.dict())
-    return {"message": "Team tracked successfully", "teams": tracked_teams}
+    if existing_team:
+        return {"message": "Team already tracked"}
+
+    new_team = TrackedTeamModel(
+        team_id=team.team_id,
+        team_name=team.team_name,
+        team_logo=team.team_logo,
+        country=team.country,
+    )
+
+    db.add(new_team)
+    db.commit()
+    db.refresh(new_team)
+
+    return {"message": "Team tracked successfully"}
 
 
 @app.get("/pulse/live")
@@ -80,21 +117,25 @@ def pulse_live():
     raw_data = get_live_fixtures()
     return {"matches": format_live_fixtures(raw_data)}
 
+
 @app.get("/pulse/fixtures/date")
 def pulse_fixtures_by_date(date: str):
     raw_data = get_fixtures_by_date(date=date)
     return {"matches": format_fixtures_by_date(raw_data)}
 
+
 @app.get("/pulse/tracked-teams/upcoming")
-def get_upcoming_tracked_team_matches():
-    if not tracked_teams:
+def get_upcoming_tracked_team_matches(db: Session = Depends(get_db)):
+    teams = db.query(TrackedTeamModel).all()
+
+    if not teams:
         return {"matches": []}
 
-    tracked_team_ids = {team["team_id"] for team in tracked_teams}
+    tracked_team_ids = {team.team_id for team in teams}
     upcoming_matches = []
     seen_fixture_ids = set()
 
-    for date in get_date_strings(4):
+    for date in get_date_strings(7):
         raw_data = get_fixtures_by_date(date)
         formatted_matches = format_fixtures_by_date(raw_data)
 
@@ -111,16 +152,19 @@ def get_upcoming_tracked_team_matches():
 
     return {"matches": upcoming_matches}
 
+
 @app.get("/pulse/tracked-teams/recent")
-def get_recent_tracked_team_matches():
-    if not tracked_teams:
+def get_recent_tracked_team_matches(db: Session = Depends(get_db)):
+    teams = db.query(TrackedTeamModel).all()
+
+    if not teams:
         return {"matches": []}
 
-    tracked_team_ids = {team["team_id"] for team in tracked_teams}
+    tracked_team_ids = {team.team_id for team in teams}
     recent_matches = []
     seen_fixture_ids = set()
 
-    for date in get_past_date_strings(4):
+    for date in get_past_date_strings(7):
         raw_data = get_fixtures_by_date(date)
         formatted_matches = format_fixtures_by_date(raw_data)
 
@@ -137,4 +181,5 @@ def get_recent_tracked_team_matches():
                         seen_fixture_ids.add(fixture_id)
                         recent_matches.append(formatted_item)
 
+    recent_matches.sort(key=lambda x: x["date"], reverse=True)
     return {"matches": recent_matches}
